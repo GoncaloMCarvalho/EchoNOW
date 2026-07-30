@@ -1,0 +1,9 @@
+# ESP-IDF / PlatformIO build directories
+**/build/
+**/.pio/
+**/sdkconfig.old
+**/managed_components/
+
+# IDE files
+.vscode/
+.idea/
