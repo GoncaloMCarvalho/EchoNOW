@@ -19,3 +19,4 @@ This module receives raw PCM audio via ESP-NOW broadcast and plays it back throu
 Ensure the target is set and flash memory configuration is updated to 16MB via `menuconfig` if necessary:
 ```bash
 idf.py build flash monitor
+```

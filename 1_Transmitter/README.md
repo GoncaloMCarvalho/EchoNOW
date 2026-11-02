@@ -20,3 +20,4 @@ This module is responsible for capturing digital audio using the INMP441 I2S mic
 Ensure you have set the ESP-IDF target to `esp32s3` and updated the flash memory configuration to 16MB via `menuconfig` if necessary:
 ```bash
 idf.py build flash monitor
+```

@@ -23,3 +23,4 @@ This is the final, fully-integrated module. It combines both the INMP441 microph
 Remember to set the target and update flash size to 16MB via `menuconfig`:
 ```bash
 idf.py build flash monitor
+```
