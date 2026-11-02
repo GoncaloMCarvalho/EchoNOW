@@ -33,9 +33,8 @@ typedef struct {
     size_t length;
 } audio_packet_t;
 
-// =========================================================
-// 1. ESP-NOW Receive Callback
-// =========================================================
+
+// 1 - ESP-NOW Receive Callback
 // This function is triggered automatically when a packet arrives
 void espnow_recv_cb(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int data_len) {
     if (data_len <= CHUNK_SIZE) {
@@ -48,9 +47,7 @@ void espnow_recv_cb(const esp_now_recv_info_t *esp_now_info, const uint8_t *data
     }
 }
 
-// =========================================================
-// 2. Wi-Fi and ESP-NOW Initialization
-// =========================================================
+// 2 - Wi-Fi and ESP-NOW Initialization
 void wifi_espnow_init(void) {
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -67,10 +64,7 @@ void wifi_espnow_init(void) {
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
-
-    // Disable Wi-Fi power save to ensure minimal latency for real-time audio
-    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
-
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));     // Disable Wi-Fi power save to ensure minimal latency for real-time audio
     ESP_ERROR_CHECK(esp_now_init());
     
     // Register the callback for incoming packets
@@ -78,11 +72,9 @@ void wifi_espnow_init(void) {
     ESP_LOGI(TAG, "ESP-NOW Receiver Initialized!");
 }
 
-// =========================================================
-// 3. I2S Amplifier Initialization (MAX98357A)
-// =========================================================
+// 3 - I2S Amplifier Initialization (MAX98357A)
 void i2s_init(void) {
-    // 1. Allocate the I2S channel (TX mode)
+    // Allocate the I2S channel (TX mode)
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     
     // Automatically clear TX DMA buffer with zeroes on underrun to prevent buzzing
@@ -90,7 +82,7 @@ void i2s_init(void) {
     
     ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_chan, NULL));
 
-    // 2. Configure the channel for standard I2S
+    // Configure the channel for standard I2S
     i2s_std_config_t std_cfg = {
         .clk_cfg  = I2S_STD_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
         .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
@@ -108,16 +100,14 @@ void i2s_init(void) {
         },
     };
 
-    // 3. Initialize and enable the channel
+    // Initialize and enable the channel
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_chan, &std_cfg));
     ESP_ERROR_CHECK(i2s_channel_enable(tx_chan));
     
     ESP_LOGI(TAG, "I2S Initialized for MAX98357A!");
 }
 
-// =========================================================
-// 4. Audio Playback Task
-// =========================================================
+// 4 - Audio Playback Task
 void rx_task(void *pvParameters) {
     audio_packet_t packet;
     size_t bytes_written;
@@ -131,7 +121,7 @@ void rx_task(void *pvParameters) {
             if (i2s_channel_write(tx_chan, packet.payload, packet.length, &bytes_written, portMAX_DELAY) == ESP_OK) {
                 packet_count++;
                 if (packet_count % 50 == 0) {
-                    ESP_LOGI(TAG, "Playing... 50 packets processed.");
+                    ESP_LOGI(TAG, "Playing.. - 50 packets processed.");
                 }
             } else {
                 ESP_LOGW(TAG, "I2S Write Error");
@@ -140,9 +130,7 @@ void rx_task(void *pvParameters) {
     }
 }
 
-// =========================================================
-// 5. ESP32 Main Entry Point
-// =========================================================
+// 5 - ESP32 Main Entry Point
 void app_main(void) {
     ESP_LOGI(TAG, "Starting EchoNow Receiver...");
 
