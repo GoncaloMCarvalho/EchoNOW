@@ -37,9 +37,8 @@ typedef struct {
     size_t length;
 } audio_packet_t;
 
-// =========================================================
-// 1. ESP-NOW Callback
-// =========================================================
+
+// 1 - ESP-NOW Callback
 void espnow_recv_cb(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int data_len) {
     if (data_len <= CHUNK_SIZE) {
         audio_packet_t packet;
@@ -53,9 +52,7 @@ void espnow_recv_cb(const esp_now_recv_info_t *esp_now_info, const uint8_t *data
     }
 }
 
-// =========================================================
-// 2. Wi-Fi and ESP-NOW Initialization
-// =========================================================
+// 2 - Wi-Fi and ESP-NOW Initializatio
 void wifi_espnow_init(void) {
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -63,7 +60,6 @@ void wifi_espnow_init(void) {
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     
@@ -72,10 +68,7 @@ void wifi_espnow_init(void) {
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
-
-    // Disable Wi-Fi power save to ensure minimal latency for real-time audio
-    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
-
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));     // Disable Wi-Fi power save to ensure minimal latency for real-time audio
     ESP_ERROR_CHECK(esp_now_init());
 
     // Register TX Peer
@@ -91,11 +84,9 @@ void wifi_espnow_init(void) {
     ESP_LOGI(TAG, "ESP-NOW Half-Duplex Initialized!");
 }
 
-// =========================================================
-// 3. I2S Initialization (Combined TX & RX)
-// =========================================================
+// 3 - I2S Initialization (Combined TX & RX)
 void i2s_init(void) {
-    // 1. Allocate BOTH channels simultaneously on the same I2S Port
+    // Allocate BOTH channels simultaneously on the same I2S Port
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     
     // Automatically clear TX DMA buffer with zeroes on underrun to prevent buzzing
@@ -103,7 +94,7 @@ void i2s_init(void) {
     
     ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_chan, &rx_chan));
 
-    // 2. Configure the shared settings (Clocks and Data pins)
+    // Configure the shared settings (Clocks and Data pins)
     i2s_std_config_t std_cfg = {
         .clk_cfg  = I2S_STD_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
         .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
@@ -123,7 +114,7 @@ void i2s_init(void) {
     
     std_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_LEFT;
 
-    // 3. Apply config and enable both channels
+    // Apply config and enable both channels
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_chan, &std_cfg));
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_chan, &std_cfg));
     ESP_ERROR_CHECK(i2s_channel_enable(tx_chan));
@@ -132,9 +123,7 @@ void i2s_init(void) {
     ESP_LOGI(TAG, "I2S Shared Clocks Initialized for Mic & Amp!");
 }
 
-// =========================================================
-// 4. Transmission Task (Microphone -> ESP-NOW)
-// =========================================================
+// 4 - Transmission Task (Microphone -> ESP-NOW
 void tx_task(void *pvParameters) {
     uint8_t audio_buffer[CHUNK_SIZE];
     size_t bytes_read;
@@ -151,9 +140,7 @@ void tx_task(void *pvParameters) {
     }
 }
 
-// =========================================================
-// 5. Reception Task (ESP-NOW -> Amplifier)
-// =========================================================
+// 5 - Reception Task (ESP-NOW -> Amplifier)
 void rx_task(void *pvParameters) {
     audio_packet_t packet;
     size_t bytes_written;
@@ -170,9 +157,7 @@ void rx_task(void *pvParameters) {
     }
 }
 
-// =========================================================
-// 6. Main Entry Point
-// =========================================================
+// 6 - Main Entry Point
 void app_main(void) {
     ESP_LOGI(TAG, "Starting EchoNow Full Walkie-Talkie...");
 
