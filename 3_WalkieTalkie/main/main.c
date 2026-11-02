@@ -162,7 +162,7 @@ void rx_task(void *pvParameters) {
         // Wait for incoming audio packets
         if (xQueueReceive(audio_queue, &packet, portMAX_DELAY) == pdTRUE) {
             
-            // Double check PTT to ensure we don't play audio while transmitting
+            // Double check PTT to ensure we do not play audio while transmitting
             if (gpio_get_level(PTT_PIN) == 1) {
                 i2s_channel_write(tx_chan, packet.payload, packet.length, &bytes_written, portMAX_DELAY);
             }

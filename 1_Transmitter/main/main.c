@@ -2,7 +2,7 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/i2s_std.h" // NOVA API I2S
+#include "driver/i2s_std.h" // New I2S Standard API
 #include "driver/gpio.h"
 #include "esp_wifi.h"
 #include "esp_now.h"
@@ -46,6 +46,9 @@ void wifi_espnow_init(void) {
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
+
+    // Disable Wi-Fi power save to ensure minimal latency for real-time audio
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
 
     ESP_ERROR_CHECK(esp_now_init());
 

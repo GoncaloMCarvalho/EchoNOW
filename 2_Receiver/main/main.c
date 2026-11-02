@@ -68,6 +68,9 @@ void wifi_espnow_init(void) {
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
 
+    // Disable Wi-Fi power save to ensure minimal latency for real-time audio
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
+
     ESP_ERROR_CHECK(esp_now_init());
     
     // Register the callback for incoming packets
@@ -79,8 +82,12 @@ void wifi_espnow_init(void) {
 // 3. I2S Amplifier Initialization (MAX98357A)
 // =========================================================
 void i2s_init(void) {
-    // 1. Allocate the I2S channel (TX this time)
+    // 1. Allocate the I2S channel (TX mode)
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
+    
+    // Automatically clear TX DMA buffer with zeroes on underrun to prevent buzzing
+    chan_cfg.auto_clear = true;
+    
     ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_chan, NULL));
 
     // 2. Configure the channel for standard I2S
