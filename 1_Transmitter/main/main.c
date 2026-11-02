@@ -2,7 +2,7 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/i2s_std.h" // New I2S Standard API
+#include "driver/i2s_std.h"
 #include "driver/gpio.h"
 #include "esp_wifi.h"
 #include "esp_now.h"
@@ -17,7 +17,7 @@
 
 // --- AUDIO PARAMETERS ---
 #define SAMPLE_RATE 16000
-#define CHUNK_SIZE  240  // In bytes. 120 samples of 16-bit. Fits the 250-byte ESP-NOW limit.
+#define CHUNK_SIZE  240  // (value in bytes) 120 samples of 16-bit fits the 250-byte ESP-NOW limit
 
 static const char *TAG = "TX_NODE";
 
@@ -27,9 +27,8 @@ uint8_t broadcast_mac[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 // Global handle for the I2S Receive Channel
 i2s_chan_handle_t rx_chan;
 
-// =========================================================
-// 1. Wi-Fi and ESP-NOW Initialization
-// =========================================================
+
+// 1 - Wi-Fi and ESP-NOW Initialization
 void wifi_espnow_init(void) {
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -46,10 +45,7 @@ void wifi_espnow_init(void) {
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
-
-    // Disable Wi-Fi power save to ensure minimal latency for real-time audio
-    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
-
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));     // Disable Wi-Fi power save to ensure minimal latency for real-time audio
     ESP_ERROR_CHECK(esp_now_init());
 
     esp_now_peer_info_t peer_info = {};
@@ -64,15 +60,13 @@ void wifi_espnow_init(void) {
     ESP_LOGI(TAG, "ESP-NOW Broadcast Initialized!");
 }
 
-// =========================================================
-// 2. I2S Microphone Initialization (ESP-IDF v5 API)
-// =========================================================
+// 2 - I2S Microphone Initialization (ESP-IDF v5 API)
 void i2s_init(void) {
-    // 1. Allocate the I2S channel
+    // Allocate the I2S channel
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, NULL, &rx_chan));
 
-    // 2. Configure the channel for standard I2S (Philips format)
+    // Configure the channel for standard I2S
     i2s_std_config_t std_cfg = {
         .clk_cfg  = I2S_STD_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
         .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
@@ -93,23 +87,21 @@ void i2s_init(void) {
     // Ensure it reads from the Left slot (INMP441 L/R pin to GND)
     std_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_LEFT;
 
-    // 3. Initialize and enable the channel
+    // Initialize and enable the channel
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_chan, &std_cfg));
     ESP_ERROR_CHECK(i2s_channel_enable(rx_chan));
     
     ESP_LOGI(TAG, "I2S v5 Initialized for INMP441!");
 }
 
-// =========================================================
-// 3. Main Transmission Task
-// =========================================================
+// 3 - Main Transmission Task
 void tx_task(void *pvParameters) {
     uint8_t audio_buffer[CHUNK_SIZE];
     size_t bytes_read;
     uint32_t packet_count = 0;
 
     while (1) {
-        // Continuously read microphone data (new API format)
+        // Continuously read microphone data
         if (i2s_channel_read(rx_chan, audio_buffer, CHUNK_SIZE, &bytes_read, portMAX_DELAY) == ESP_OK) {
             
             // Only send via ESP-NOW if PTT button is pressed (LOW)
@@ -132,9 +124,9 @@ void tx_task(void *pvParameters) {
     }
 }
 
-// =========================================================
-// 4. ESP32 Main Entry Point
-// =========================================================
+
+// 4 - ESP32 Main Entry Point
+
 void app_main(void) {
     ESP_LOGI(TAG, "Starting EchoNow Transmitter...");
 
