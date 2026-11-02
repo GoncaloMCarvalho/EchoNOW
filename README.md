@@ -94,6 +94,7 @@ Both the microphone and the amplifier share the same I2S clock lines (`WS` on `G
 5. Build, flash, and open the Serial Monitor:
 ```bash
 idf.py build flash monitor
+```
 ---
 
 > *Engineering a reliable wireless audio transmission, one packet at a time.*
